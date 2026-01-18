@@ -37,20 +37,7 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: unittests
-          name: codecov-node-${{ matrix.node-version }}
-          fail_ci_if_error: true
 
-      - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report-node-${{ matrix.node-version }}
-          path: coverage/
-          retention-days: 30
 
   coverage-summary:
     name: Coverage Summary
