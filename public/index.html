@@ -1,128 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MakeMKV Auto Rip - Web UI</title>
-    <link rel="stylesheet" href="/static/css/styles.css" />
-  </head>
-  <body>
-    <div class="container">
-      <header class="header">
-        <div class="header-top">
-          <h1>🎬 MakeMKV Auto Rip</h1>
-          <div class="connection-status" id="connectionStatus">
-            <span class="status-indicator" id="statusIndicator">●</span>
-            <span class="status-text" id="statusText">Connecting...</span>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MakeMKV Auto Rip - Web UI</title>
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-top">
+        <h1>🎬 MakeMKV Auto Rip</h1>
+        <div class="connection-status" id="connectionStatus">
+          <span class="status-indicator" id="statusIndicator">●</span>
+          <span class="status-text" id="statusText">Connecting...</span>
+        </div>
+      </div>
+      <p class="subtitle">Web Interface for Automatic Disc Ripping</p>
+
+      <!-- Current Status integrated into header -->
+      <div class="status-card">
+        <div class="status-info">
+          <span class="status-label">Status:</span>
+          <span class="status-value" id="currentStatus">Idle</span>
+        </div>
+        <div class="operation-info">
+          <span class="operation-label">Operation:</span>
+          <span class="operation-value" id="currentOperation">None</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- All Operations Section -->
+      <section class="operations-section">
+        <h2>🎛️ Operations</h2>
+        <div class="operations-grid">
+          <!-- Drive Operations -->
+          <div class="operation-group">
+            <h3>💿 Drive Operations</h3>
+            <div class="button-group">
+              <button class="btn btn-primary" id="loadDrivesBtn">
+                📥 Load All Drives
+              </button>
+              <button class="btn btn-secondary" id="ejectDrivesBtn">
+                📤 Eject All Drives
+              </button>
+            </div>
+          </div>
+
+          <!-- Ripping Operations -->
+          <div class="operation-group">
+            <h3>🎯 Ripping</h3>
+            <div class="button-group">
+              <button class="btn btn-success" id="startRippingBtn">
+                ▶️ Start Ripping
+              </button>
+              <button class="btn btn-warning" id="startBackupBtn">
+                💾 Start Backup
+              </button>
+            </div>
+            <p class="help-text">
+              Automatically detect and rip all inserted discs
+            </p>
+          </div>
+
+          <!-- Auto-Rip Operations -->
+          <div class="operation-group">
+            <h3>🤖 Auto-Rip Automation</h3>
+            <div class="button-group">
+              <button class="btn btn-primary" id="startAutoRipBtn">
+                ▶️ Start Auto-Rip
+              </button>
+              <button class="btn btn-danger" id="stopAutoRipBtn" disabled>
+                ⏹️ Stop Auto-Rip
+              </button>
+            </div>
+            <div class="auto-rip-status"
+              style="margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span class="status-indicator" id="autoRipIndicator"
+                style="width: 10px; height: 10px; background-color: #ccc; border-radius: 50%; display: inline-block;"></span>
+              <span id="autoRipStatusText">Service Idle</span>
+            </div>
+
+            <div id="autoRipHistory" style="margin-top: 15px; text-align: left; display: none;">
+              <h4>📜 Processed History</h4>
+              <ul id="autoRipHistoryList"
+                style="font-size: 0.9em; padding-left: 20px; max-height: 100px; overflow-y: auto;">
+                <!-- History items will be added here -->
+              </ul>
+            </div>
+
+            <p class="help-text">
+              Continuously monitor drives and process newly inserted discs
+            </p>
+          </div>
+
+          <!-- Configuration -->
+          <div class="operation-group">
+            <h3>⚙️ Configuration</h3>
+            <div class="button-group">
+              <a href="/config" class="btn btn-info">
+                ✏️ Edit Configuration
+              </a>
+            </div>
+            <p class="help-text">
+              Open the configuration editor to modify application settings
+            </p>
           </div>
         </div>
-        <p class="subtitle">Web Interface for Automatic Disc Ripping</p>
+      </section>
 
-        <!-- Current Status integrated into header -->
-        <div class="status-card">
-          <div class="status-info">
-            <span class="status-label">Status:</span>
-            <span class="status-value" id="currentStatus">Idle</span>
-          </div>
-          <div class="operation-info">
-            <span class="operation-label">Operation:</span>
-            <span class="operation-value" id="currentOperation">None</span>
+      <!-- Logs Section -->
+      <section class="logs-section">
+        <h2>📋 Activity Logs</h2>
+        <div class="logs-container">
+          <div class="logs-content" id="logsContent">
+            <div class="log-entry info">
+              <span class="log-time">Ready</span>
+              <span class="log-message">Web UI loaded successfully</span>
+            </div>
           </div>
         </div>
-      </header>
+        <div class="logs-controls">
+          <button class="btn btn-small" id="clearLogsBtn">
+            🗑️ Clear Logs
+          </button>
+        </div>
+      </section>
+    </main>
 
-      <main class="main">
-        <!-- All Operations Section -->
-        <section class="operations-section">
-          <h2>🎛️ Operations</h2>
-          <div class="operations-grid">
-            <!-- Drive Operations -->
-            <div class="operation-group">
-              <h3>💿 Drive Operations</h3>
-              <div class="button-group">
-                <button class="btn btn-primary" id="loadDrivesBtn">
-                  📥 Load All Drives
-                </button>
-                <button class="btn btn-secondary" id="ejectDrivesBtn">
-                  📤 Eject All Drives
-                </button>
-              </div>
-            </div>
+    <footer class="footer">
+      <p>
+        MakeMKV Auto Rip <span id="appVersion"></span> |
+        <a href="https://github.com/Poisonite/MakeMKV-Auto-Rip" target="_blank">
+          GitHub
+        </a>
+      </p>
+    </footer>
+  </div>
 
-            <!-- Ripping Operations -->
-            <div class="operation-group">
-              <h3>🎯 Ripping</h3>
-              <div class="button-group">
-                <button class="btn btn-success" id="startRippingBtn">
-                  ▶️ Start Ripping
-                </button>
-              </div>
-              <p class="help-text">
-                Automatically detect and rip all inserted discs
-              </p>
-            </div>
+  <script src="/static/js/app.js"></script>
+  <script>
+    // Fetch app version and update footer text
+    fetch("/api/info")
+      .then((r) => r.json())
+      .then((info) => {
+        const el = document.getElementById("appVersion");
+        if (el && info && info.version) {
+          el.textContent = `v${info.version}`;
+        }
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  </script>
+</body>
 
-            <!-- Configuration -->
-            <div class="operation-group">
-              <h3>⚙️ Configuration</h3>
-              <div class="button-group">
-                <a href="/config" class="btn btn-info">
-                  ✏️ Edit Configuration
-                </a>
-              </div>
-              <p class="help-text">
-                Open the configuration editor to modify application settings
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <!-- Logs Section -->
-        <section class="logs-section">
-          <h2>📋 Activity Logs</h2>
-          <div class="logs-container">
-            <div class="logs-content" id="logsContent">
-              <div class="log-entry info">
-                <span class="log-time">Ready</span>
-                <span class="log-message">Web UI loaded successfully</span>
-              </div>
-            </div>
-          </div>
-          <div class="logs-controls">
-            <button class="btn btn-small" id="clearLogsBtn">
-              🗑️ Clear Logs
-            </button>
-          </div>
-        </section>
-      </main>
-
-      <footer class="footer">
-        <p>
-          MakeMKV Auto Rip <span id="appVersion"></span> |
-          <a
-            href="https://github.com/Poisonite/MakeMKV-Auto-Rip"
-            target="_blank"
-          >
-            GitHub
-          </a>
-        </p>
-      </footer>
-    </div>
-
-    <script src="/static/js/app.js"></script>
-    <script>
-      // Fetch app version and update footer text
-      fetch("/api/info")
-        .then((r) => r.json())
-        .then((info) => {
-          const el = document.getElementById("appVersion");
-          if (el && info && info.version) {
-            el.textContent = `v${info.version}`;
-          }
-        })
-        .catch(() => {
-          /* ignore */
-        });
-    </script>
-  </body>
 </html>

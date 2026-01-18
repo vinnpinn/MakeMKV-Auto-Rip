@@ -90,6 +90,16 @@ export class AppConfig {
     return this.#normalizePath(config.paths?.movie_rips_dir);
   }
 
+  static get backupDir() {
+    const config = this.#loadConfig();
+    return this.#normalizePath(config.paths?.backup_dir);
+  }
+
+  static get isBackupDecryptEnabled() {
+    const config = this.#loadConfig();
+    return config.backup?.decrypt !== false; // Default to true
+  }
+
   static get isFileLogEnabled() {
     const config = this.#loadConfig();
     return Boolean(config.paths?.logging?.enabled);
@@ -148,6 +158,17 @@ export class AppConfig {
   static get isRepeatModeEnabled() {
     const config = this.#loadConfig();
     return Boolean(config.interface?.repeat_mode);
+  }
+
+  static get autoRipMode() {
+    const config = this.#loadConfig();
+    return config.auto_rip?.mode === "backup" ? "backup" : "rip";
+  }
+
+  static get autoRipPollInterval() {
+    const config = this.#loadConfig();
+    const interval = config.auto_rip?.poll_interval;
+    return typeof interval === "number" && interval > 0 ? interval : 5;
   }
 
   /**

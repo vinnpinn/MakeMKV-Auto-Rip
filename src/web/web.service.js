@@ -11,6 +11,7 @@ import { fileURLToPath } from "url";
 import { Logger } from "../utils/logger.js";
 import { apiRoutes } from "./routes/api.routes.js";
 import { webSocketHandler } from "./middleware/websocket.middleware.js";
+import { autoRipService } from "../services/auto-rip.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,6 +94,21 @@ export class WebService {
       webSocketHandler(ws, request);
     });
 
+    // Forward auto-rip status events to all clients
+    autoRipService.on("status", (status) => {
+      if (this.wss) {
+        const message = JSON.stringify({
+          type: "autorip_status",
+          payload: status
+        });
+        this.wss.clients.forEach(client => {
+          if (client.readyState === 1) { // OPEN
+            client.send(message);
+          }
+        });
+      }
+    });
+
     Logger.info("WebSocket server configured");
   }
 
@@ -119,6 +135,9 @@ export class WebService {
       return;
     }
 
+    // Stop auto-rip service if running
+    autoRipService.stop();
+
     return new Promise((resolve) => {
       this.server.close(() => {
         this.isRunning = false;
@@ -139,3 +158,4 @@ export class WebService {
     };
   }
 }
+

@@ -102,6 +102,157 @@ export class RipService {
   }
 
   /**
+   * Start the backup process for all available discs
+   * @returns {Promise<void>}
+   */
+  async startBackup() {
+    try {
+      // Load drives first if loading is enabled
+      if (AppConfig.isLoadDrivesEnabled) {
+        Logger.info("Loading drives before backup...");
+        await DriveService.loadDrivesWithWait();
+      }
+
+      // Get fake date from config
+      const fakeDate = AppConfig.makeMKVFakeDate;
+
+      await withSystemDate(fakeDate, async () => {
+        Logger.info("Beginning Backup... Please Wait.");
+        const commandDataItems = await DiscService.getAvailableDiscs();
+
+        // Check if any discs were found
+        if (commandDataItems.length === 0) {
+          Logger.info(
+            "No discs found to backup. No backup operations will be performed."
+          );
+          Logger.separator();
+          await this.handlePostRipActions();
+          return;
+        }
+
+        Logger.info(
+          `Found ${commandDataItems.length} disc(s) ready for backup.`
+        );
+        await this.processBackupQueue(commandDataItems);
+        this.displayResults();
+        await this.handlePostRipActions();
+      });
+    } catch (error) {
+      Logger.error("Critical error during backup process", error);
+      await this.ejectDiscs();
+      safeExit(1, "Critical error during backup process");
+    }
+  }
+
+  /**
+   * Process the queue of discs to backup
+   * @param {Array} commandDataItems - Array of disc information objects
+   * @returns {Promise<void>}
+   */
+  async processBackupQueue(commandDataItems) {
+    if (AppConfig.rippingMode === "sync") {
+      // Process discs one at a time (synchronously)
+      Logger.info("Backing up discs synchronously (one at a time)...");
+      for (const item of commandDataItems) {
+        try {
+          await this.backupSingleDisc(item, AppConfig.backupDir);
+        } catch (error) {
+          Logger.error(`Error backing up ${item.title}`, error);
+          this.badVideoArray.push(item.title);
+        }
+      }
+    } else {
+      // Process discs in parallel (asynchronously)
+      Logger.info("Backing up discs asynchronously (parallel processing)...");
+      const promises = [];
+
+      for (const item of commandDataItems) {
+        const promise = this.backupSingleDisc(item, AppConfig.backupDir)
+          .then((result) => result)
+          .catch((error) => {
+            Logger.error(`Error backing up ${item.title}`, error);
+            this.badVideoArray.push(item.title);
+          });
+        promises.push(promise);
+      }
+
+      try {
+        await Promise.all(promises);
+      } catch (error) {
+        Logger.error("Uncorrectable Error Backing up One or More DVDs.", error);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Backup a single disc
+   * @param {Object} commandDataItem - Disc information object
+   * @param {string} outputPath - Output directory path
+   * @returns {Promise<string>} - Title of the backed up disc
+   */
+  async backupSingleDisc(commandDataItem, outputPath) {
+    return new Promise(async (resolve, reject) => {
+      const dir = FileSystemUtils.createUniqueFolder(
+        outputPath,
+        commandDataItem.title
+      );
+
+      Logger.info(`Backing up Title ${commandDataItem.title} to ${dir}...`);
+
+      // Get MakeMKV executable path
+      const makeMKVExecutable = await AppConfig.getMakeMKVExecutable();
+      if (!makeMKVExecutable) {
+        reject(
+          new Error(
+            "MakeMKV executable not found. Please ensure MakeMKV is installed."
+          )
+        );
+        return;
+      }
+
+      const decryptFlag = AppConfig.isBackupDecryptEnabled ? "--decrypt" : "";
+      const makeMKVCommand = `${makeMKVExecutable} backup ${decryptFlag} disc:${commandDataItem.driveNumber} "${dir}"`;
+
+      exec(makeMKVCommand, async (err, stdout, stderr) => {
+        // Check for critical MakeMKV messages
+        const shouldContinue = MakeMKVMessages.checkOutput(
+          stdout + (stderr || ""),
+          false
+        );
+
+        if (!shouldContinue) {
+          Logger.error(
+            "MakeMKV version is too old, please update to the latest version"
+          );
+          reject(
+            new Error(
+              "MakeMKV version is too old, please update to the latest version"
+            )
+          );
+          return;
+        }
+
+        if (err || stderr) {
+          Logger.error(
+            `Critical Error Backing up ${commandDataItem.title}`,
+            err || stderr
+          );
+          reject(err || stderr);
+          return;
+        }
+
+        try {
+          await this.handleRipCompletion(stdout, commandDataItem);
+          resolve(commandDataItem.title);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+  }
+
+  /**
    * Rip a single disc
    * @param {Object} commandDataItem - Disc information object
    * @param {string} outputPath - Output directory path

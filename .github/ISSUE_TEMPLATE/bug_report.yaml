@@ -112,6 +112,7 @@ body:
       placeholder: |
         paths:
           movie_rips_dir: "C:/Your/Movie/Rips"
+          backup_dir: "C:/Your/Backup/Directory"
           logging:
             enabled: true
             dir: "C:/Your/Log/Directory"

@@ -37,6 +37,8 @@ export class FileSystemUtils {
     let dir = join(outputPath, folderName);
     let folderCounter = 1;
 
+    FileSystemUtils.ensureDirectoryExists(outputPath);
+
     if (fs.existsSync(dir)) {
       while (fs.existsSync(`${dir}-${folderCounter}`)) {
         folderCounter++;

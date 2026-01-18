@@ -9,7 +9,10 @@ paths:
   # makemkv_dir: "C:/Program Files (x86)/MakeMKV" # For Advanced users only - overwrite the automatic detection
 
   # Directory where ripped movies/tv/media will be saved
-  movie_rips_dir: "./media"
+  movie_rips_dir: "./media/rips"
+
+  # Directory where full disc backups will be saved
+  backup_dir: "./media/backups"
 
   # Logging configuration
   logging:
@@ -19,6 +22,18 @@ paths:
     dir: "./logs"
     # Time format for log timestamps (12hr/24hr)
     time_format: "12hr"
+
+# Backup settings
+backup:
+  # Whether to decrypt backups (default: true)
+  decrypt: true
+
+# Auto-Rip configuration
+auto_rip:
+  # Mode: 'rip' or 'backup'
+  mode: "backup"
+  # Polling interval in seconds (default: 5)
+  poll_interval: 5
 
 # Drive operation settings
 drives:

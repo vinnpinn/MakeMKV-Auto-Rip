@@ -64,6 +64,13 @@ describe("AppConfig", () => {
       expect(result).toContain("media");
     });
 
+    it("should return correct backup directory", async () => {
+      const { AppConfig } = await import("../../src/config/index.js");
+
+      const result = AppConfig.backupDir;
+      expect(result).toContain("media");
+    });
+
     it("should return correct logging enabled status", async () => {
       const { AppConfig } = await import("../../src/config/index.js");
 

@@ -91,6 +91,10 @@ class MakeMKVWebUI {
         this.updateStatus(data.status, data.operation, data.canStop);
         break;
 
+      case "autorip_status":
+        this.updateAutoRipStatus(data.payload);
+        break;
+
       case "log":
         this.addLog(data.level, data.message);
         break;
@@ -101,6 +105,202 @@ class MakeMKVWebUI {
 
       default:
         console.log("Unknown message type:", data.type);
+    }
+  }
+
+  // ... (keep startReconnecting, updateConnectionStatus)
+
+  /**
+   * Setup event listeners for UI elements
+   */
+  setupEventListeners() {
+    // Drive operation buttons
+    document.getElementById("loadDrivesBtn").addEventListener("click", () => {
+      this.performDriveOperation("load");
+    });
+
+    document.getElementById("ejectDrivesBtn").addEventListener("click", () => {
+      this.performDriveOperation("eject");
+    });
+
+    // Ripping operations
+    document.getElementById("startRippingBtn").addEventListener("click", () => {
+      this.startRipping();
+    });
+
+    document.getElementById("startBackupBtn").addEventListener("click", () => {
+      this.startBackup();
+    });
+
+    // Auto-Rip operations
+    const startAutoRipBtn = document.getElementById("startAutoRipBtn");
+    if (startAutoRipBtn) {
+      startAutoRipBtn.addEventListener("click", () => {
+        this.startAutoRip();
+      });
+    }
+
+    const stopAutoRipBtn = document.getElementById("stopAutoRipBtn");
+    if (stopAutoRipBtn) {
+      stopAutoRipBtn.addEventListener("click", () => {
+        this.stopAutoRip();
+      });
+    }
+
+    // Logs
+    document.getElementById("clearLogsBtn").addEventListener("click", () => {
+      this.clearLogs();
+    });
+  }
+
+  /**
+   * Start status polling
+   */
+  startStatusPolling() {
+    // Poll status every 2 seconds
+    setInterval(() => {
+      if (this.isConnected) {
+        this.fetchStatus();
+        this.fetchAutoRipStatus();
+        this.fetchAutoRipHistory();
+      }
+    }, 2000);
+
+    // Initial status fetch
+    this.fetchStatus();
+    this.fetchAutoRipStatus();
+    this.fetchAutoRipHistory();
+  }
+
+  /**
+   * Fetch current status from API
+   */
+  async fetchStatus() {
+    try {
+      const response = await fetch("/api/status");
+      const data = await response.json();
+      this.updateStatus(data.status, data.operation, data.canStop);
+    } catch (error) {
+      console.error("Failed to fetch status:", error);
+    }
+  }
+
+  /**
+   * Fetch Auto-Rip status
+   */
+  async fetchAutoRipStatus() {
+    try {
+      const response = await fetch("/api/autorip/status");
+      const data = await response.json();
+      this.updateAutoRipStatus(data);
+    } catch (error) {
+      console.error("Failed to fetch auto-rip status:", error);
+    }
+  }
+
+  /**
+   * Fetch Auto-Rip history
+   */
+  async fetchAutoRipHistory() {
+    try {
+      const response = await fetch("/api/autorip/history");
+      const data = await response.json();
+      this.updateAutoRipHistory(data.history);
+    } catch (error) {
+      console.error("Failed to fetch auto-rip history:", error);
+    }
+  }
+
+  /**
+   * Update Auto-Rip history in UI
+   */
+  updateAutoRipHistory(history) {
+    const historyContainer = document.getElementById("autoRipHistory");
+    const historyList = document.getElementById("autoRipHistoryList");
+
+    if (!history || history.length === 0) {
+      historyContainer.style.display = "none";
+      return;
+    }
+
+    historyContainer.style.display = "block";
+    historyList.innerHTML = "";
+
+    history.forEach(item => {
+      const li = document.createElement("li");
+      li.textContent = `[Drive ${item.drive}] ${item.title}`;
+      historyList.appendChild(li);
+    });
+  }
+
+  /**
+   * Update Auto-Rip status in UI
+   */
+  updateAutoRipStatus(statusData) {
+    const indicator = document.getElementById("autoRipIndicator");
+    const text = document.getElementById("autoRipStatusText");
+    const startBtn = document.getElementById("startAutoRipBtn");
+    const stopBtn = document.getElementById("stopAutoRipBtn");
+
+    const isRunning = statusData.isPolling;
+    const state = statusData.state || "idle";
+
+    if (isRunning) {
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      if (statusData.currentOperation) {
+        indicator.style.backgroundColor = "#ffc107"; // Yellow/Orange
+        text.textContent = `Auto-Rip: ${statusData.currentOperation}`;
+      } else {
+        indicator.style.backgroundColor = "#28a745"; // Green
+        text.textContent = "Auto-Rip: Scanning...";
+      }
+    } else {
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      indicator.style.backgroundColor = "#ccc"; // Grey
+      text.textContent = "Auto-Rip Inactive";
+    }
+  }
+
+  /**
+   * Start Auto-Rip service
+   */
+  async startAutoRip() {
+    try {
+      this.addLog("info", "Starting Auto-Rip service...");
+      const response = await fetch("/api/autorip/start", { method: "POST" });
+      const data = await response.json();
+
+      if (data.success) {
+        this.addLog("success", data.message);
+        this.fetchAutoRipStatus();
+      } else {
+        this.addLog("error", data.error || "Failed to start Auto-Rip");
+      }
+    } catch (error) {
+      this.addLog("error", `Failed to start Auto-Rip: ${error.message}`);
+    }
+  }
+
+  /**
+   * Stop Auto-Rip service
+   */
+  async stopAutoRip() {
+    try {
+      this.addLog("info", "Stopping Auto-Rip service...");
+      const response = await fetch("/api/autorip/stop", { method: "POST" });
+      const data = await response.json();
+
+      if (data.success) {
+        this.addLog("warn", data.message);
+        this.fetchAutoRipStatus();
+      } else {
+        this.addLog("error", data.error || "Failed to stop Auto-Rip");
+      }
+    } catch (error) {
+      this.addLog("error", `Failed to stop Auto-Rip: ${error.message}`);
     }
   }
 
@@ -151,29 +351,7 @@ class MakeMKVWebUI {
     }
   }
 
-  /**
-   * Setup event listeners for UI elements
-   */
-  setupEventListeners() {
-    // Drive operation buttons
-    document.getElementById("loadDrivesBtn").addEventListener("click", () => {
-      this.performDriveOperation("load");
-    });
 
-    document.getElementById("ejectDrivesBtn").addEventListener("click", () => {
-      this.performDriveOperation("eject");
-    });
-
-    // Ripping operations
-    document.getElementById("startRippingBtn").addEventListener("click", () => {
-      this.startRipping();
-    });
-
-    // Logs
-    document.getElementById("clearLogsBtn").addEventListener("click", () => {
-      this.clearLogs();
-    });
-  }
 
   /**
    * Start status polling
@@ -255,6 +433,14 @@ class MakeMKVWebUI {
         ripBtn.disabled = false;
         loadBtn.disabled = true;
         ejectBtn.disabled = true;
+      } else if (status === "backup") {
+        const backupBtn = document.getElementById("startBackupBtn");
+        backupBtn.innerHTML = "⏹️ Stop Backup";
+        backupBtn.className = "btn btn-warning";
+        backupBtn.disabled = false;
+        loadBtn.disabled = true;
+        ejectBtn.disabled = true;
+        ripBtn.disabled = true;
       }
     } else {
       // Show normal buttons when idle
@@ -269,6 +455,11 @@ class MakeMKVWebUI {
       ripBtn.innerHTML = "▶️ Start Ripping";
       ripBtn.className = "btn btn-success";
       ripBtn.disabled = isOperationInProgress;
+
+      const backupBtn = document.getElementById("startBackupBtn");
+      backupBtn.innerHTML = "💾 Start Backup";
+      backupBtn.className = "btn btn-warning";
+      backupBtn.disabled = isOperationInProgress;
     }
   }
 
@@ -336,6 +527,38 @@ class MakeMKVWebUI {
       }
     } catch (error) {
       this.addLog("error", `Failed to start ripping: ${error.message}`);
+    }
+  }
+
+  /**
+   * Start the backup process or stop current operation
+   */
+  async startBackup() {
+    try {
+      // Check if this is a stop operation
+      if (this.canStop && this.currentStatus === "backup") {
+        await this.stopCurrentOperation();
+        return;
+      }
+
+      this.addLog("info", "Starting backup process...");
+
+      const response = await fetch("/api/rip/backup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        this.addLog("success", data.message);
+      } else {
+        this.addLog("error", data.error || "Failed to start backup");
+      }
+    } catch (error) {
+      this.addLog("error", `Failed to start backup: ${error.message}`);
     }
   }
 

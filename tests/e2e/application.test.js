@@ -25,6 +25,7 @@ describe("Application End-to-End Tests", () => {
       paths: {
         makemkv_dir: testTempDir,
         movie_rips_dir: path.join(testTempDir, "rips"),
+        backup_dir: path.join(testTempDir, "backup"),
         logging: {
           enabled: true,
           dir: path.join(testTempDir, "logs"),
@@ -89,6 +90,11 @@ describe("Application End-to-End Tests", () => {
       const movieDir = AppConfig.movieRipsDir;
       expect(typeof movieDir).toBe("string");
       expect(movieDir.length).toBeGreaterThan(0);
+
+      // Test that we can get the backup directory
+      const backupDir = AppConfig.backupDir;
+      expect(typeof backupDir).toBe("string");
+      expect(backupDir.length).toBeGreaterThan(0);
     });
 
     it("should handle invalid YAML configuration", async () => {
@@ -319,7 +325,7 @@ TINFO:1,9,0,"0:45:12"`;
       const { CLIInterface } = await import("../../src/cli/interface.js");
 
       // Mock console to capture output
-      const consoleSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "info").mockImplementation(() => { });
 
       const cli = new CLIInterface();
       cli.displayWelcome();
@@ -396,8 +402,8 @@ TINFO:1,9,0,"0:45:12"`;
     it("should format log messages correctly", async () => {
       const { Logger } = await import("../../src/utils/logger.js");
 
-      const consoleSpy = vi.spyOn(console, "info").mockImplementation(() => {});
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "info").mockImplementation(() => { });
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => { });
 
       Logger.info("Test info message");
       Logger.error("Test error message");
@@ -413,7 +419,7 @@ TINFO:1,9,0,"0:45:12"`;
     it("should handle different log levels", async () => {
       const { Logger } = await import("../../src/utils/logger.js");
 
-      const consoleSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, "info").mockImplementation(() => { });
 
       Logger.header("Header message");
       Logger.headerAlt("Alt header message");
@@ -452,6 +458,7 @@ TINFO:1,9,0,"0:45:12"`;
         paths: {
           makemkv_dir: "", // Empty path
           movie_rips_dir: "./test",
+          backup_dir: "./backup",
           logging: {
             enabled: true,
             dir: "./logs",

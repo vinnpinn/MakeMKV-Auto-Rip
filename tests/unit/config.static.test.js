@@ -18,6 +18,7 @@ const mountDOM = () => {
         <input type="text" id="makemkv_dir" name="paths.makemkv_dir" />
 
         <input type="text" id="movie_rips_dir" name="paths.movie_rips_dir" required />
+        <input type="text" id="backup_dir" name="paths.backup_dir" required />
 
         <input type="radio" name="paths.logging.enabled" value="true" />
         <input type="radio" name="paths.logging.enabled" value="false" />
@@ -56,7 +57,8 @@ const mountDOM = () => {
 const mockConfig = {
   paths: {
     makemkv_dir: "C:/Program Files/MakeMKV",
-    movie_rips_dir: "./media",
+    movie_rips_dir: "./media/rips",
+    backup_dir: "./media/backup",
     logging: { enabled: true, dir: "./logs", time_format: "12hr" },
   },
   drives: { auto_load: true, auto_eject: true, load_delay: 0 },
@@ -121,7 +123,8 @@ describe("ConfigEditor (config.js)", () => {
     await vi.runAllTimersAsync();
 
     // Populated fields
-    expect(document.getElementById("movie_rips_dir").value).toBe("./media");
+    expect(document.getElementById("movie_rips_dir").value).toBe("./media/rips");
+    expect(document.getElementById("backup_dir").value).toBe("./media/backup");
     expect(
       document.querySelector(
         'input[name="paths.logging.enabled"][value="true"]'
@@ -206,7 +209,9 @@ describe("ConfigEditor (config.js)", () => {
     // Change detection toggles save banner
     const form = document.getElementById("configForm");
     const movieDir = document.getElementById("movie_rips_dir");
+    const backupDir = document.getElementById("backup_dir");
     movieDir.value = "./changed";
+    backupDir.value = "./changed";
     form.dispatchEvent(new Event("input"));
     expect(
       document.getElementById("saveBanner").classList.contains("show")
@@ -253,7 +258,9 @@ describe("ConfigEditor (config.js)", () => {
 
     // 1) Missing movie_rips_dir
     const movieDir = document.getElementById("movie_rips_dir");
+    const backupDir = document.getElementById("backup_dir");
     movieDir.value = "";
+    backupDir.value = "";
     form.dispatchEvent(new Event("submit"));
     // Error message inserted
     expect(document.querySelector(".message.error")).toBeTruthy();

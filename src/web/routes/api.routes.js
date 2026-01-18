@@ -13,6 +13,7 @@ import {
   broadcastStatusUpdate,
   broadcastLogMessage,
 } from "../middleware/websocket.middleware.js";
+import { autoRipService } from "../../services/auto-rip.service.js";
 
 const router = Router();
 
@@ -294,6 +295,12 @@ router.post("/config/structured", async (req, res) => {
       return res
         .status(400)
         .json({ error: "Movie rips directory is required" });
+    }
+
+    if (!config.paths?.backup_dir) {
+      return res
+        .status(400)
+        .json({ error: "Backup directory is required" });
     }
 
     if (config.paths?.logging?.enabled && !config.paths?.logging?.dir) {
@@ -592,6 +599,126 @@ router.post("/rip/start", async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to start ripping: " + error.message });
+  }
+});
+
+/**
+ * Start the backup process using CLI command
+ */
+router.post("/rip/backup", async (req, res) => {
+  try {
+    if (operationStatus !== "idle") {
+      return res
+        .status(409)
+        .json({ error: "Another operation is in progress" });
+    }
+
+    operationStatus = "backup";
+    currentOperation = "Starting backup process...";
+    broadcastStatusUpdate("backup", "Starting backup process...");
+
+    // Start the backup process in the background using CLI
+    setImmediate(async () => {
+      try {
+        const result = await executeCliCommand("npm", [
+          "run",
+          "backup",
+          "--silent",
+          "--",
+          "--quiet",
+        ]);
+
+        operationStatus = "idle";
+        currentOperation = null;
+        broadcastStatusUpdate("idle", null);
+
+        if (result.success) {
+          broadcastLogMessage(
+            "success",
+            "Backup process completed successfully"
+          );
+        } else {
+          broadcastLogMessage(
+            "error",
+            `Backup process failed: ${result.error}`
+          );
+        }
+      } catch (error) {
+        Logger.error("Backup process failed", error.message);
+        operationStatus = "idle";
+        currentOperation = null;
+        broadcastStatusUpdate("idle", null);
+        broadcastLogMessage(
+          "error",
+          `Backup process failed: ${error.message}`
+        );
+      }
+    });
+
+    res.json({ success: true, message: "Backup process started" });
+  } catch (error) {
+    operationStatus = "idle";
+    currentOperation = null;
+    Logger.error("Failed to start backup", error.message);
+    res
+      .status(500)
+      .json({ error: "Failed to start backup: " + error.message });
+  }
+});
+
+/**
+ * Auto-Rip: Start service
+ */
+router.post("/autorip/start", (req, res) => {
+  try {
+    autoRipService.start();
+    res.json({ success: true, message: "Auto-Rip service started" });
+  } catch (error) {
+    Logger.error("Failed to start Auto-Rip service", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Auto-Rip: Stop service
+ */
+router.post("/autorip/stop", (req, res) => {
+  try {
+    autoRipService.stop();
+    res.json({ success: true, message: "Auto-Rip service stopped" });
+  } catch (error) {
+    Logger.error("Failed to stop Auto-Rip service", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Auto-Rip: Get status
+ */
+router.get("/autorip/status", (req, res) => {
+  try {
+    res.json(autoRipService.getStatus());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Auto-Rip: Get processing history
+ */
+router.get("/autorip/history", (req, res) => {
+  try {
+    // Convert Map to array of objects
+    const history = Array.from(autoRipService.processedDiscs.entries()).map(
+      ([drive, title]) => ({
+        drive,
+        title,
+        status: "processed",
+      })
+    );
+    res.json({ history });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

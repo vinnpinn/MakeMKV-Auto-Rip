@@ -213,6 +213,9 @@ paths:
   # Directory where ripped movies will be saved
   movie_rips_dir: "C:/Your/Movie/Rips"
 
+  # Directory where backup files will be saved
+  backup_dir: "C:/Your/Backup/Directory"
+
   # Logging configuration
   logging:
     # Whether to save logs to files (true/false)
@@ -272,6 +275,7 @@ makemkv:
   - Supports forward slashes on all platforms
   - For Advanced Users: Only needed if MakeMKV is installed in a non-standard location
 - **`paths.movie_rips_dir`** - Root directory for ripped movies (create a dedicated folder)
+- **`paths.backup_dir`** - Root directory for backup files (create a dedicated folder) 
 - **`paths.logging.enabled`** - Enable/disable writing MakeMKV output to log files (`true` or `false`)
 - **`paths.logging.dir`** - Directory for log files
 - **`paths.logging.time_format`** - Time format for console/terminal timestamps (`"12hr"` or `"24hr"`)

@@ -18,6 +18,7 @@ export const colors = {
     underline: chalk.white.underline,
   },
   blue: chalk.blue,
+  debug: chalk.gray,
 };
 
 /**
@@ -57,6 +58,17 @@ export class Logger {
 
   static plain(message) {
     console.info(message);
+  }
+
+  static debug(message) {
+    // Only log debug messages if needed (could be controlled by config, but for now just log it)
+    const timeFormat =
+      AppConfig.logTimeFormat === "12hr" ? "h:mm:ss a" : "HH:mm:ss";
+    const timestamp = colors.time(format(new Date(), timeFormat));
+    const dash = colors.dash(" - ");
+    const debugText = colors.debug(message);
+
+    console.debug(`${timestamp}${dash}${debugText}`);
   }
 
   static separator() {

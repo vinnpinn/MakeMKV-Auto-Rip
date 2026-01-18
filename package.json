@@ -13,6 +13,7 @@
         "web:dev": "node web.js",
         "load": "node src/cli/commands.js load",
         "eject": "node src/cli/commands.js eject",
+        "backup": "node src/cli/commands.js backup",
         "test": "vitest",
         "test:run": "vitest run",
         "test:coverage": "vitest run --coverage",

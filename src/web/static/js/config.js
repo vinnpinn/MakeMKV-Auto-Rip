@@ -291,6 +291,10 @@ class ConfigEditor {
       "paths.movie_rips_dir",
       config.paths?.movie_rips_dir || ""
     );
+    this.setFieldValue(
+      "paths.backup_dir",
+      config.paths?.backup_dir || ""
+    );
     this.setRadioValue(
       "paths.logging.enabled",
       config.paths?.logging?.enabled ?? true
@@ -560,6 +564,12 @@ class ConfigEditor {
     const movieRipsDir = document.getElementById("movie_rips_dir").value.trim();
     if (!movieRipsDir) {
       this.showMessage("Movie rips directory is required", "error");
+      return false;
+    }
+
+    const backupDir = document.getElementById("backup_dir").value.trim();
+    if (!backupDir) {
+      this.showMessage("Backup directory is required", "error");
       return false;
     }
 

@@ -5,6 +5,7 @@
  */
 
 import { DriveService } from "../services/drive.service.js";
+import { RipService } from "../services/rip.service.js";
 import { AppConfig } from "../config/index.js";
 import { Logger } from "../utils/logger.js";
 import { safeExit } from "../utils/process.js";
@@ -70,6 +71,32 @@ export async function ejectDrives(flags = {}) {
   }
 }
 
+/**
+ * Backup drives command
+ * @param {Object} flags - Command flags
+ * @param {boolean} flags.quiet - Reduce verbose output
+ */
+export async function backupDrives(flags = {}) {
+  try {
+    if (!flags.quiet) {
+      displayHeader();
+      Logger.info("Starting backup process...");
+    }
+    AppConfig.validate();
+
+    const ripService = new RipService();
+    await ripService.startBackup();
+
+    if (!flags.quiet) {
+      Logger.info("Backup operation completed.");
+    }
+    safeExit(0, "Backup operation completed");
+  } catch (error) {
+    Logger.error("Failed to backup drives", error.message);
+    safeExit(1, "Failed to backup drives");
+  }
+}
+
 // Parse command line arguments
 const args = process.argv.slice(2);
 const command = args[0];
@@ -83,6 +110,9 @@ switch (command) {
     break;
   case "eject":
     ejectDrives(flags);
+    break;
+  case "backup":
+    backupDrives(flags);
     break;
   default:
     Logger.error("Invalid command. Use 'load' or 'eject'");
